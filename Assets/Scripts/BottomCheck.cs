@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class BottomCheck : MonoBehaviour
 {
+    PlatformManager _platformManager;
     CameraController _camController;
     Collider2D _collider2D;
     SpriteRenderer _view;
@@ -12,6 +13,7 @@ public class BottomCheck : MonoBehaviour
     Collectable[] _collectables;
     private void Start()
     {
+        _platformManager = FindObjectOfType<PlatformManager>();
         _player = FindObjectOfType<Player>();
         _collider2D = GetComponent<Collider2D>();
         _camController = FindObjectOfType<CameraController>();
@@ -45,6 +47,7 @@ public class BottomCheck : MonoBehaviour
 
     public IEnumerator RestartStuff()
     {
+        _platformManager.Reset();
         _camController.Freeze();
         yield return new WaitForSeconds(0.5f);
         if (_camController != null)

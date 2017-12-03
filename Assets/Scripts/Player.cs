@@ -130,6 +130,8 @@ public class Player : MonoBehaviour
     {
         get { return m_jumping || _jumpMotion; }
     }
+
+    private PlatformManager _platformManager;
     
 	// Use this for initialization
 	void Start()
@@ -138,6 +140,7 @@ public class Player : MonoBehaviour
         _startPos = new Vector2(transform.position.x, transform.position.y);
         _colliderRef = GetComponent<CapsuleCollider2D>();
         _playerBody = GetComponent<Rigidbody2D>();
+        _platformManager = FindObjectOfType<PlatformManager>();
 
         CalculateJumpVars();
         DetectGround();
@@ -497,6 +500,7 @@ public class Player : MonoBehaviour
     {
         _currentDepletionRate = m_depletionRate + Collected * m_depletionCollectionIncrease;
         _depleting = true;
+        _platformManager.SetSolid(true);
     }
 
     public void UpdateDepleting()

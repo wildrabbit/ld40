@@ -46,6 +46,7 @@ public class CameraController : MonoBehaviour
     }
 	void Start ()
     {
+        Screen.SetResolution(540, 960, false);
         _frozen = false;
         DOTween.Init(false, true, LogBehaviour.ErrorsOnly);
         SetPlayer(GameObject.Find("Player").GetComponent<Player>());
@@ -55,7 +56,7 @@ public class CameraController : MonoBehaviour
         _topSnap = -size * (topSnapThreshold + 0.5f);
         _botSnap = -levelHeight + size * (bottomSnapThreshold + 0.5f);
 
-        var startTween = _cam.transform.DOMoveY(_startPos.y, 2f).SetEase(Ease.InOutQuint).OnComplete(StartTransitionComplete);
+        var startTween = _cam.transform.DOMoveY(_startPos.y, 0.2f).SetEase(Ease.InOutQuint).OnComplete(StartTransitionComplete);
     }
 
     void StartTransitionComplete()
