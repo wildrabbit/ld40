@@ -65,24 +65,39 @@ public class CameraController : MonoBehaviour
     void Update ()
     {
         if (_target == null) return;
-        if (_target.position.y < _topSnap && _target.position.y > _botSnap)
+        float targetHeight = _target.position.y;
+        if (targetHeight < _topSnap && targetHeight > _botSnap)
         {
             Player player = _target.GetComponent<Player>();
             if (player != null && player.Jumping)
             {
                 return;
             }
-
-            if (motion == null)
-            {
-                motion = _cam.transform.DOLocalMoveY(_target.position.y, 0.3f).OnComplete(() => motion = null);
-            }
-            else
-            {
-                motion.ChangeEndValue(_target.position.y, 0.3f);
-            }
         }
-	}
+        else targetHeight = FollowNSnap();
+
+        if (motion == null)
+        {
+            motion = _cam.transform.DOLocalMoveY(targetHeight, 0.3f).OnComplete(() => motion = null);
+        }
+        else
+        {
+            motion.ChangeEndValue(targetHeight, 0.3f);
+        }
+    }
+
+    float FollowNSnap()
+    {
+        if (_target.position.y > _topSnap)
+        {
+            return -_cam.orthographicSize;
+        }
+        else if (_target.position.y < _botSnap)
+        {
+            return -levelHeight + _cam.orthographicSize;
+        }
+        return _target.position.y;
+    }
 
     public void Reset()
     {
