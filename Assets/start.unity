@@ -1117,12 +1117,17 @@ Prefab:
     - target: {fileID: 114546345968246558, guid: d7ac91bc3ba333a4d969d73d1c0bb952,
         type: 2}
       propertyPath: m_maxFallSpeed
-      value: 3.5
+      value: 15
       objectReference: {fileID: 0}
     - target: {fileID: 114546345968246558, guid: d7ac91bc3ba333a4d969d73d1c0bb952,
         type: 2}
       propertyPath: m_acceleration
       value: 15
+      objectReference: {fileID: 0}
+    - target: {fileID: 114546345968246558, guid: d7ac91bc3ba333a4d969d73d1c0bb952,
+        type: 2}
+      propertyPath: m_maxGlideSpeed
+      value: 3.5
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 100100000, guid: d7ac91bc3ba333a4d969d73d1c0bb952, type: 2}
@@ -2423,9 +2428,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   topSnapThreshold: 0.2
-  bottomSnapThreshold: 0.2
+  bottomSnapThreshold: 0.1
   levelHeight: 36
   deathZoneOffset: 0
+  camSpeed: 13
   snapToPlatform: 0
 --- !u!81 &1919843847
 AudioListener:

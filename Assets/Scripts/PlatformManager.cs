@@ -16,10 +16,6 @@ public class PlatformManager : MonoBehaviour
         {
             p.SetSolid(false);
         }
-        if (_rootPlatform != null)
-        {
-            _rootPlatform.SetSolid(true);
-        }
 	}
 
     public void SetSolid(bool param)
@@ -27,10 +23,6 @@ public class PlatformManager : MonoBehaviour
         foreach (Platform p in _platforms)
         {
             p.SetSolid(param);
-        }
-        if (_rootPlatform != null)
-        {
-            _rootPlatform.SetSolid(true);
         }
     }
 	
@@ -45,10 +37,6 @@ public class PlatformManager : MonoBehaviour
         foreach (Platform p in _platforms)
         {
             p.Reset();
-        }
-        if (_rootPlatform != null)
-        {
-            _rootPlatform.SetSolid(true);
         }
     }
 }

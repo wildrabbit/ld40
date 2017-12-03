@@ -72,10 +72,13 @@ public class Player : MonoBehaviour
 
     [Tooltip("Max. fall speed")]
     public float m_maxFallSpeed = 30.0f;
+    [Tooltip("Max. glide speed")]
+    public float m_maxGlideSpeed = 30.0f;
 
     [Header("Walk configuration")]
     public float m_acceleration = 0.0f;
     public float m_maxSpeed = 10.0f;
+    public float m_maxSpeedGliding = 4.0f;
     public float m_drag = 10.0f;
     public float m_velocityThreshold = 0.5f;
 
@@ -120,6 +123,12 @@ public class Player : MonoBehaviour
     private bool _jumpMotion;
     private float _lastJumpRequest;
 
+    private bool _gliding;
+    public bool Gliding
+    {
+        get { return _gliding; }
+    }
+
     private bool _depleting;
     public bool Depleting
     {
@@ -158,6 +167,8 @@ public class Player : MonoBehaviour
         _energyLeft = m_maxEnergy;
         _currentDepletionRate = m_depletionRate;
         _depleting = false;
+
+        _gliding = true;
     }
 
     // Update is called once per frame
@@ -329,11 +340,12 @@ public class Player : MonoBehaviour
             m_falling = false;
             _jumpMotion = false;
 
-            if (bestCollider.CompareTag("Finish") && !_depleting)
+            if (!_depleting && bestCollider.CompareTag("Finish"))
             {
-                //BeginDepleting();
+                _gliding = false;
             }
-            else if (_depleting && bestCollider.CompareTag("Respawn"))
+
+            if (_depleting && bestCollider.CompareTag("Respawn"))
             {
                 FinaliseDepleting(DepleteEnd.ArrivedToGoal);
             }
@@ -367,10 +379,17 @@ public class Player : MonoBehaviour
         // Y-movement
         if (!m_grounded)
         {
-            m_velocity.y -= m_gravity * Time.deltaTime;
-            if (m_velocity.y < -m_maxFallSpeed)
+            if (_gliding)
             {
-                m_velocity.y = -m_maxFallSpeed;
+                m_velocity.y = -m_maxGlideSpeed;
+            }
+            else
+            {
+                m_velocity.y -= m_gravity * Time.deltaTime;
+                if (m_velocity.y < -m_maxFallSpeed)
+                {
+                    m_velocity.y = -m_maxFallSpeed;
+                }
             }
         }
 
@@ -402,9 +421,10 @@ public class Player : MonoBehaviour
         _jumpMotion = _jumpMotion && (m_velocity.y > 0f || (m_falling && transform.position.y > _jumpStartHeight));
 
         float oldVelocity = m_velocity.x;
+        float maxSpeed = _gliding ? m_maxSpeedGliding : m_maxSpeed;
         if (Mathf.Approximately(m_acceleration, 0.0f))
         {
-            m_velocity.x = m_impulse.x * m_maxSpeed;
+            m_velocity.x = m_impulse.x * maxSpeed;
         }
         else // Accelerated movement. Factor drag, too.
         {
@@ -430,10 +450,10 @@ public class Player : MonoBehaviour
             else
             {
                 m_velocity.x += m_acceleration * m_impulse.x * Time.deltaTime;
-                if (Mathf.Abs(m_velocity.x) >= m_maxSpeed)
+                if (Mathf.Abs(m_velocity.x) >= maxSpeed)
                 {
                     // Unity Math's sign returns 1 if 0, which we don't want here :/
-                    m_velocity.x = m_maxSpeed * ((m_velocity.x > 0.0f) ? 1 : (m_velocity.x < 0.0f) ? -1 : 0);
+                    m_velocity.x = maxSpeed * ((m_velocity.x > 0.0f) ? 1 : (m_velocity.x < 0.0f) ? -1 : 0);
                 }
             }
         }
@@ -469,6 +489,7 @@ public class Player : MonoBehaviour
         Collected = 0;
         _depleting = false;
         _canMove = true;
+        _gliding = true;
     }
 
     public void OnCollected(Collectable item)
@@ -501,6 +522,7 @@ public class Player : MonoBehaviour
         _currentDepletionRate = m_depletionRate + Collected * m_depletionCollectionIncrease;
         _depleting = true;
         _platformManager.SetSolid(true);
+        _gliding = false;
     }
 
     public void UpdateDepleting()

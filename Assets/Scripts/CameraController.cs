@@ -10,6 +10,8 @@ public class CameraController : MonoBehaviour
     public float levelHeight;
     public float deathZoneOffset = 0.0f;
 
+    public float camSpeed = 10f;
+
     public bool snapToPlatform = false;
 
     Vector3 _startPos;
@@ -23,6 +25,7 @@ public class CameraController : MonoBehaviour
     Tweener motion;
 
     bool _frozen;
+    float _targetHeight;
     
     public void SnapToHeight(float height)
     {
@@ -56,7 +59,10 @@ public class CameraController : MonoBehaviour
         _topSnap = -size * (topSnapThreshold + 0.5f);
         _botSnap = -levelHeight + size * (bottomSnapThreshold + 0.5f);
 
-        var startTween = _cam.transform.DOMoveY(_startPos.y, 0.2f).SetEase(Ease.InOutQuint).OnComplete(StartTransitionComplete);
+        _targetHeight = _startPos.y;
+        float time = Mathf.Max((_targetHeight - _cam.transform.position.y) / camSpeed, 0.01f);
+
+        var startTween = _cam.transform.DOMoveY(_targetHeight, time).SetEase(Ease.InOutQuint).OnComplete(StartTransitionComplete);
     }
 
     void StartTransitionComplete()
@@ -68,32 +74,33 @@ public class CameraController : MonoBehaviour
     // Update is called once per frame
     void Update ()
     {
+        float oldTarget = _targetHeight;
         if (_frozen) return;
         if (_target == null) return;
-        float targetHeight = _target.position.y;
-        if (targetHeight < _topSnap && targetHeight > _botSnap)
+        _targetHeight = _target.position.y;
+        if (_targetHeight < _topSnap && _targetHeight > _botSnap)
         {
             if (_player != null && (_player.Jumping))
-            {
                 return;
-            }
         }
-        else targetHeight = FollowNSnap();
+        else _targetHeight = FollowNSnap();
 
-        if (_player.Depleting && targetHeight < _cam.transform.position.y)
+        if (_player.Depleting && _targetHeight < _cam.transform.position.y)
         {
             motion.Kill();
             motion = null;
             return;
         }
 
+        float time = Mathf.Max(Mathf.Abs(_targetHeight - _cam.transform.position.y) / camSpeed, 0.01f);
+
         if (motion == null)
         {
-            motion = _cam.transform.DOLocalMoveY(targetHeight, 0.3f).OnComplete(() => motion = null);
+           motion = _cam.transform.DOLocalMoveY(_targetHeight, time).OnComplete(() => motion = null);
         }
         else
         {
-            motion.ChangeEndValue(targetHeight, 0.3f);
+            motion.ChangeEndValue(_targetHeight, time);
         }
     }
 
