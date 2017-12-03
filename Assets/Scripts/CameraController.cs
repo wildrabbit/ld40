@@ -16,6 +16,8 @@ public class CameraController : MonoBehaviour
 
     public bool snapToPlatform = false;
 
+    public BottomCheck _bottomChecker;
+
     Vector3 _startPos;
     Camera _cam;
     Player _player;
@@ -35,6 +37,7 @@ public class CameraController : MonoBehaviour
     
     public void SnapToHeight(float height)
     {
+        Debug.Log("Snapping height");
         _cam.transform.DOMoveY(height, 0.5f).SetEase(Ease.InBack);
     }
 
@@ -51,13 +54,18 @@ public class CameraController : MonoBehaviour
 
     void OnPlatformStepped(Collider2D col)
     {
-        _platformSnapping = true;
         _targetHeight = col.transform.position.y + _cam.orthographicSize - platformSnapOffset;
-        float time = Mathf.Max((_targetHeight - _cam.transform.position.y) / camSpeed, 0.01f);
-        motion = _cam.transform.DOMoveY(_targetHeight, time).OnComplete(() => {
+        if (_cam.transform.position.y > _targetHeight) return; // Don't go down.
+
+        _platformSnapping = true;
+        float speed = camSpeed / 2;
+        float time = Mathf.Max(Mathf.Abs(_targetHeight - _cam.transform.position.y) / speed, 0.025f);
+        Debug.Log("Step on platform");
+        motion = _cam.transform.DOMoveY(_targetHeight, time).OnComplete(() =>
+        {
             if (OnPlatformSnapFinished != null) OnPlatformSnapFinished(GetCameraDeathZone());
             _platformSnapping = false;
-        });
+        }).SetDelay(0.1f);
     }
 
 	// Use this for initialization
@@ -67,7 +75,9 @@ public class CameraController : MonoBehaviour
     }
 	void Start ()
     {
-        Screen.SetResolution(540, 960, false);
+        _bottomChecker = GameObject.FindWithTag("Finish").GetComponent<BottomCheck>();
+        levelHeight = Mathf.Abs(_bottomChecker.transform.position.y);
+        Screen.SetResolution(432, 768, false);
         _frozen = false;
         DOTween.Init(false, true, LogBehaviour.ErrorsOnly);
         SetPlayer(GameObject.Find("Player").GetComponent<Player>());
@@ -118,7 +128,7 @@ public class CameraController : MonoBehaviour
 
         if (motion == null)
         {
-           motion = _cam.transform.DOLocalMoveY(_targetHeight, time).OnComplete(() => motion = null);
+            motion = _cam.transform.DOLocalMoveY(_targetHeight, time).OnComplete(() => motion = null);
         }
         else
         {

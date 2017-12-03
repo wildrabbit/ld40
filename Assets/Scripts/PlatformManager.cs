@@ -66,6 +66,7 @@ public class PlatformManager : MonoBehaviour
 
     public void Reset()
     {
+        SetSolid(false);
         foreach (PlatformCollectable p in _platformCollectables)
         {
             p.Reset();

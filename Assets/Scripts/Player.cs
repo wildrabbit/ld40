@@ -46,10 +46,11 @@ public class Player : MonoBehaviour
     public int boostCost = 1;
     public float boostCooldown = 3.0f;
     public float boostDuration = 0.8f;
-    public float jumpPressedToBoost = 0.8f;
-    private float _elapsedLastBoost = 0f;
+    public float requiredBoostChargeTime = 0.8f;
+    private float _remainingBoostCooldown = 0f;
     private float _elapsedBoost = 0f;
-    public bool _boosting = false;
+    bool _boosting = false;
+    bool _impulseLocked = false;
     private float _elapsedBoostCharged = 0f;
 
 
@@ -91,12 +92,18 @@ public class Player : MonoBehaviour
     public float m_maxSpeedGliding = 4.0f;
     public float m_drag = 10.0f;
     public float m_velocityThreshold = 0.5f;
+    public float m_velocityFlipThreshold = 0.5f;
 
     public event Action<Collider2D> FirstPlatformAfterGlide;
     public event Action<Collider2D> PlatformStepped;
     public event Action<DepleteEnd> DepletionFinished;
     public event Action GlideFinished;
     public event Action DepleteBegun;
+
+    public event Action<bool> GameFinished;
+
+    SpriteRenderer _rendererRef;
+    SpriteRenderer _glidingRef;
 
     public int Collected
     {
@@ -131,7 +138,7 @@ public class Player : MonoBehaviour
     private bool _paused;
     private Vector2 _startPos;
     private Rigidbody2D _playerBody;
-
+    private Collider2D _endColliderRef;
     private Vector2 m_impulse;
     private float _jumpStartHeight;
     private bool _jumpMotion;
@@ -155,14 +162,20 @@ public class Player : MonoBehaviour
     }
 
     private Collider2D _lastCollider;
+    private Level _levelData;
     
 	// Use this for initialization
 	void Start()
     {
+        _levelData = FindObjectOfType<Level>();
+        _rendererRef = transform.Find("View").GetComponent<SpriteRenderer>();
+        _glidingRef = transform.Find("GlidingView").GetComponent<SpriteRenderer>();
         _canMove = false;
         _startPos = new Vector2(transform.position.x, transform.position.y);
         _colliderRef = GetComponent<CapsuleCollider2D>();
         _playerBody = GetComponent<Rigidbody2D>();
+
+        _endColliderRef = GameObject.FindGameObjectWithTag("Finish").GetComponent<Collider2D>();
 
         CalculateJumpVars();
         DetectGround();
@@ -181,12 +194,24 @@ public class Player : MonoBehaviour
         _currentDepletionRate = m_depletionRate;
         _depleting = false;
 
-        _gliding = true;
         _paused = false;
+
+        _boosting = false;
+        _impulseLocked = false;
+        _elapsedBoost = -1.0f;
+        _elapsedBoostCharged = -1.0f;
+        _remainingBoostCooldown = -1.0f;
+        SetGliding(true);
+    }
+
+    void SetGliding(bool value)
+    {
+        _gliding = value;
+        _glidingRef.enabled = value;
     }
 
     // Update is called once per frame
-    void Update ()
+    void Update()
     {
         if (_paused) return;
 
@@ -206,6 +231,53 @@ public class Player : MonoBehaviour
         // Constant speed, don't do anything special
        
         DetectWalls();
+
+        UpdateBoostTimers();
+    }
+
+
+    void StartBoost()
+    {
+        if (CanUseBoost)
+        {
+            _boosting = true;
+            _elapsedBoost = 0.0f;
+            _elapsedBoostCharged = -1.0f;
+            m_jumpCount++;
+            Collected -= boostCost;
+            ApplyBoost();
+        }
+        else
+        {
+            _boosting = false;
+            _elapsedBoost = -1.0f;
+            _elapsedBoostCharged = -1.0f;
+        }
+        _rendererRef.color = Color.white;
+        _impulseLocked = false;
+        
+    }
+
+    void ApplyBoost()
+    {
+        m_velocity.y = 2 * m_jumpTermVelocity;
+    }
+
+    void UpdateBoostTimers()
+    {
+        if (_boosting)
+        {
+            _elapsedBoost += Time.deltaTime;
+            if (_elapsedBoost >= boostDuration)
+            {
+                _boosting = false;
+                _remainingBoostCooldown = boostCooldown;
+            }
+        }
+        else if (_remainingBoostCooldown > 0)
+        {
+            _remainingBoostCooldown -= Time.deltaTime;
+        }
     }
 
     private bool DetectCeiling()
@@ -355,16 +427,16 @@ public class Player : MonoBehaviour
             m_grounded = true;
             m_falling = false;
             _jumpMotion = false;
-            if (_gliding && bestCollider.CompareTag("Finish"))
+            if (_gliding && bestCollider == _endColliderRef)
             {
-                _gliding = false;
+                SetGliding(false);
                 if (GlideFinished != null)
                 {
                     GlideFinished();
                 }
             }
 
-            if (_depleting)
+            if (!_gliding)
             {
                 if (bestCollider.CompareTag("Respawn"))
                 { 
@@ -372,18 +444,17 @@ public class Player : MonoBehaviour
                 }
                 else
                 {
-                    if (!bestCollider.CompareTag("Finish"))
+                    if (bestCollider != _endColliderRef)
                     {
                         PlatformStepped(bestCollider);
-                        if (_lastCollider == null || _lastCollider.CompareTag("Finish"))
+                        if (_lastCollider == _endColliderRef && FirstPlatformAfterGlide != null)
                         {
                             FirstPlatformAfterGlide(bestCollider);
                         }
                     }
-                }
-                _lastCollider = bestCollider;
+                }                
             }
-
+            _lastCollider = bestCollider;
         }
         else
         {
@@ -394,9 +465,9 @@ public class Player : MonoBehaviour
 
     void LateUpdate()
     {
-        if (m_velocity.magnitude > m_velocityThreshold * SQRT_2)
+        if (m_velocity.magnitude > m_velocityFlipThreshold * SQRT_2)
         {
-            bool newFacingRight = m_velocity.x > 0.0f || (m_facingRight && Mathf.Abs(m_velocity.x) < m_velocityThreshold);
+            bool newFacingRight = m_velocity.x > 0.0f || (m_facingRight && Mathf.Abs(m_velocity.x) < m_velocityFlipThreshold);
             if ((newFacingRight && !m_facingRight) || (!newFacingRight && m_facingRight))
             {
                 Vector3 scale = transform.localScale;
@@ -409,6 +480,8 @@ public class Player : MonoBehaviour
 
     void FixedUpdate()
     {
+        if (_paused) return;
+
         DetectGround();
 
         // Y-movement
@@ -428,28 +501,72 @@ public class Player : MonoBehaviour
             }
         }
 
-        if (Input.GetButtonUp("Jump") && !_gliding)
+        if (_boosting)
         {
-            if (m_velocity.y > m_jumpTermVelocity)
-            {
-                m_velocity.y = m_jumpTermVelocity;
-            }
+            ApplyBoost();
         }
         else
         {
-            m_wasJumping = m_jumping;
-            m_jumping = _canMove && !_gliding ? Input.GetButton("Jump") : false;
-            if (m_jumping)
+            bool jumpReleased = Input.GetButtonUp("Jump") && _canMove && !_gliding;
+            bool jumpJustPressed = Input.GetButtonDown("Jump") && _canMove && !_gliding;
+            bool jumpPressed = Input.GetButton("Jump") && _canMove && !_gliding;
+
+            if (jumpReleased)
             {
-                _lastJumpRequest = Time.time;
+                if (m_velocity.y > m_jumpTermVelocity)
+                {
+                    m_velocity.y = m_jumpTermVelocity;
+                }
             }
-
-            bool multiJump = m_jumping && !m_wasJumping && m_jumpCount < m_maxJumps;
-            bool groundJump = ((m_jumping && !m_wasJumping)|| (Time.time - _lastJumpRequest < m_jumpInterval)) && m_grounded;
-
-            if (groundJump || multiJump)
+            else
             {
-                BeginJumping();
+                m_wasJumping = m_jumping;
+                m_jumping = jumpPressed;
+                if (m_jumping)
+                {
+                    _lastJumpRequest = Time.time;
+                    bool multiJump = m_jumping && !m_wasJumping && m_jumpCount < m_maxJumps;
+                    bool groundJump = ((m_jumping && !m_wasJumping) || (Time.time - _lastJumpRequest < m_jumpInterval)) && m_grounded;
+
+                    if (!_boosting && (groundJump || multiJump))
+                    {
+                        BeginJumping();
+                    }
+                }
+                else
+                {
+                    bool boostReleased = Input.GetButtonUp("Fire1") && _canMove && !_gliding;
+                    bool boostJustPressed = Input.GetButtonDown("Fire1") && _canMove && !_gliding;
+                    bool boostPressed = Input.GetButton("Fire1") && _canMove && !_gliding;
+                    if (boostReleased)
+                    {
+                        if (_elapsedBoostCharged > requiredBoostChargeTime)
+                        {
+                            StartBoost();
+                        }
+                        else
+                        {
+                            _elapsedBoostCharged = -1.0f;
+                        }
+                        _impulseLocked = false;
+                    }
+                    else if (boostPressed)
+                    {
+                        if (CanUseBoost && _elapsedBoostCharged < 0f)
+                        {
+                            if (Mathf.Abs(m_impulse.x) < 0.1f)
+                            {
+                                //_impulseLocked = true;
+                            }
+                            _elapsedBoostCharged = 0.0f;
+                        }
+                        else if (_elapsedBoostCharged >= 0)_elapsedBoostCharged += Time.deltaTime;
+                        if (_elapsedBoostCharged >= requiredBoostChargeTime)
+                        {
+                            _rendererRef.color = Color.yellow;
+                        }
+                    }
+                }
             }
         }
         m_falling = m_velocity.y < 0.0f;
@@ -471,13 +588,17 @@ public class Player : MonoBehaviour
 
             if (Mathf.Abs(m_impulse.x) < 0.1f)
             {
+                int oldSign = m_velocity.x > 0 ? 1 : (m_velocity.x < 0) ? -1 : 0;
                 if (Mathf.Abs(m_velocity.x) > m_velocityThreshold)
                 {
                     int dragDirection = ((m_velocity.x > 0.0f) ? -1 : (m_velocity.x < 0.0f) ? 1 : 0);
-                    m_velocity.x += Mathf.Min(m_velocityThreshold, m_drag * Time.deltaTime) * dragDirection;
+                    float dragAmount = m_drag * Time.deltaTime;
+                    Debug.Log("Applying drag: velocity: " + m_velocity.x + ", DRAG: " + dragAmount + ", impulse: " + m_impulse.x);
+                    m_velocity.x += dragAmount * dragDirection;
                 }
 
-                if (Mathf.Abs(m_velocity.x) < m_velocityThreshold)
+                int newSign = ((m_velocity.x > 0.0f) ? -1 : (m_velocity.x < 0.0f) ? 1 : 0);
+                if (Mathf.Abs(m_velocity.x) < m_velocityThreshold || newSign != oldSign)
                 {
                     m_velocity.x = 0.0f;
                 }
@@ -493,6 +614,10 @@ public class Player : MonoBehaviour
             }
         }
 
+        if (_impulseLocked)
+        {
+            m_velocity.x = 0;
+        }
         Vector2 pos = _playerBody.position + m_velocity * Time.deltaTime;
         _playerBody.position = pos;
 
@@ -525,7 +650,13 @@ public class Player : MonoBehaviour
         Collected = 0;
         _depleting = false;
         _canMove = true;
-        _gliding = true;
+        SetGliding(true);
+        _boosting = false;
+        _impulseLocked = false;
+        _elapsedBoost = -1.0f;
+        _elapsedBoostCharged = -1.0f;
+        _remainingBoostCooldown = -1.0f;
+        _rendererRef.color = Color.white;
     }
 
     public void OnCollected(Collectable item)
@@ -569,13 +700,15 @@ public class Player : MonoBehaviour
         // do stuff
         EnableMovement(false);
         DepletionFinished(type);
+        GameFinished(Collected >= _levelData.required);
     }
 
     public bool CanUseBoost
     {
         get
         {
-            return !_boosting && Collected >= boostCost && (_elapsedLastBoost >= boostCooldown);
+            return !_gliding && _canMove && !_boosting && Collected >= boostCost && (_remainingBoostCooldown < 0f);
         }
     }
+
 }
