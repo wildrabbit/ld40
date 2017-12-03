@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -42,6 +43,15 @@ public class Player : MonoBehaviour
     float _energyLeft = 0;
     float _currentDepletionRate = 0;
 
+    public int boostCost = 1;
+    public float boostCooldown = 3.0f;
+    public float boostDuration = 0.8f;
+    public float jumpPressedToBoost = 0.8f;
+    private float _elapsedLastBoost = 0f;
+    private float _elapsedBoost = 0f;
+    public bool _boosting = false;
+    private float _elapsedBoostCharged = 0f;
+
 
     [Header("Collision tweaks")]
     public int m_vertRaysCount = 3;
@@ -82,8 +92,11 @@ public class Player : MonoBehaviour
     public float m_drag = 10.0f;
     public float m_velocityThreshold = 0.5f;
 
-    public BottomCheck deadZone;
-
+    public event Action<Collider2D> FirstPlatformAfterGlide;
+    public event Action<Collider2D> PlatformStepped;
+    public event Action<DepleteEnd> DepletionFinished;
+    public event Action GlideFinished;
+    public event Action DepleteBegun;
 
     public int Collected
     {
@@ -140,7 +153,7 @@ public class Player : MonoBehaviour
         get { return m_jumping || _jumpMotion; }
     }
 
-    private PlatformManager _platformManager;
+    private Collider2D _lastCollider;
     
 	// Use this for initialization
 	void Start()
@@ -149,7 +162,6 @@ public class Player : MonoBehaviour
         _startPos = new Vector2(transform.position.x, transform.position.y);
         _colliderRef = GetComponent<CapsuleCollider2D>();
         _playerBody = GetComponent<Rigidbody2D>();
-        _platformManager = FindObjectOfType<PlatformManager>();
 
         CalculateJumpVars();
         DetectGround();
@@ -339,16 +351,35 @@ public class Player : MonoBehaviour
             m_grounded = true;
             m_falling = false;
             _jumpMotion = false;
-
             if (!_depleting && bestCollider.CompareTag("Finish"))
             {
                 _gliding = false;
+                if (GlideFinished != null)
+                {
+                    GlideFinished();
+                }
             }
 
-            if (_depleting && bestCollider.CompareTag("Respawn"))
+            if (_depleting)
             {
-                FinaliseDepleting(DepleteEnd.ArrivedToGoal);
+                if (bestCollider.CompareTag("Respawn"))
+                { 
+                    FinaliseDepleting(DepleteEnd.ArrivedToGoal);
+                }
+                else
+                {
+                    if (!bestCollider.CompareTag("Finish"))
+                    {
+                        PlatformStepped(bestCollider);
+                        if (_lastCollider == null || _lastCollider.CompareTag("Finish"))
+                        {
+                            FirstPlatformAfterGlide(bestCollider);
+                        }
+                    }
+                }
+                _lastCollider = bestCollider;
             }
+
         }
         else
         {
@@ -393,7 +424,7 @@ public class Player : MonoBehaviour
             }
         }
 
-        if (Input.GetButtonUp("Jump"))
+        if (Input.GetButtonUp("Jump") && !_gliding)
         {
             if (m_velocity.y > m_jumpTermVelocity)
             {
@@ -403,7 +434,7 @@ public class Player : MonoBehaviour
         else
         {
             m_wasJumping = m_jumping;
-            m_jumping = _canMove ? Input.GetButton("Jump") : false;
+            m_jumping = _canMove && !_gliding ? Input.GetButton("Jump") : false;
             if (m_jumping)
             {
                 _lastJumpRequest = Time.time;
@@ -494,10 +525,10 @@ public class Player : MonoBehaviour
 
     public void OnCollected(Collectable item)
     {
-        Collected++;
+        Collected += item.amount;
         if (_depleting)
         {
-            _currentDepletionRate += m_depletionCollectionIncrease;
+            //_currentDepletionRate += m_depletionCollectionIncrease;
         }
     }
 
@@ -510,35 +541,21 @@ public class Player : MonoBehaviour
         if (!_depleting)
         {
             BeginDepleting();
-            if (deadZone != null)
-            {
-                deadZone.SetTrigger(true);
-            }
         }
     }
 
     public void BeginDepleting()
     {
-        _currentDepletionRate = m_depletionRate + Collected * m_depletionCollectionIncrease;
+        _currentDepletionRate = m_depletionRate; //+ Collected * m_depletionCollectionIncrease;
         _depleting = true;
-        _platformManager.SetSolid(true);
-        _gliding = false;
+        if (DepleteBegun != null)
+        {
+            DepleteBegun();
+        }
     }
 
     public void UpdateDepleting()
     {
-        float amount = _currentDepletionRate * Time.deltaTime;
-        _energyLeft = Mathf.Max(_energyLeft - amount, 0);
-        if (Mathf.FloorToInt(_energyLeft) % 10 == 0)
-        { 
-            Debug.Log("Energy left: " + _energyLeft);
-        }
-
-        if (Mathf.Approximately(_energyLeft, 0f))
-        {
-            FinaliseDepleting(DepleteEnd.Exhausted);
-        }
-
     }
 
     public void FinaliseDepleting(DepleteEnd type)
@@ -546,6 +563,14 @@ public class Player : MonoBehaviour
         _depleting = false;
         // do stuff
         EnableMovement(false);
-        deadZone.RestartStuff();
+        DepletionFinished(type);
+    }
+
+    public bool CanUseBoost
+    {
+        get
+        {
+            return !_boosting && Collected >= boostCost && (_elapsedLastBoost >= boostCooldown);
+        }
     }
 }

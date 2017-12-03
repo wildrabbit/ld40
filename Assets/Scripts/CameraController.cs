@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using DG.Tweening;
+using System;
 
 public class CameraController : MonoBehaviour
 {
@@ -9,6 +10,7 @@ public class CameraController : MonoBehaviour
     public float bottomSnapThreshold = 0.2f;
     public float levelHeight;
     public float deathZoneOffset = 0.0f;
+    public float platformSnapOffset = 2.0f;
 
     public float camSpeed = 10f;
 
@@ -26,6 +28,10 @@ public class CameraController : MonoBehaviour
 
     bool _frozen;
     float _targetHeight;
+
+    bool _platformSnapping;
+
+    public event Action<Vector2> OnPlatformSnapFinished;
     
     public void SnapToHeight(float height)
     {
@@ -40,6 +46,18 @@ public class CameraController : MonoBehaviour
     public void SetPlayer(Player player)
     {
         _player = player;
+        _player.PlatformStepped += OnPlatformStepped;
+    }
+
+    void OnPlatformStepped(Collider2D col)
+    {
+        _platformSnapping = true;
+        _targetHeight = col.transform.position.y + _cam.orthographicSize - platformSnapOffset;
+        float time = Mathf.Max((_targetHeight - _cam.transform.position.y) / camSpeed, 0.01f);
+        motion = _cam.transform.DOMoveY(_targetHeight, time).OnComplete(() => {
+            if (OnPlatformSnapFinished != null) OnPlatformSnapFinished(GetCameraDeathZone());
+            _platformSnapping = false;
+        });
     }
 
 	// Use this for initialization
@@ -77,6 +95,8 @@ public class CameraController : MonoBehaviour
         float oldTarget = _targetHeight;
         if (_frozen) return;
         if (_target == null) return;
+        if (_platformSnapping) return;
+
         _targetHeight = _target.position.y;
         if (_targetHeight < _topSnap && _targetHeight > _botSnap)
         {

@@ -10,7 +10,6 @@ public class BottomCheck : MonoBehaviour
     SpriteRenderer _view;
     Vector2 _startPos;
     Player _player;
-    Collectable[] _collectables;
     private void Start()
     {
         _platformManager = FindObjectOfType<PlatformManager>();
@@ -19,8 +18,11 @@ public class BottomCheck : MonoBehaviour
         _camController = FindObjectOfType<CameraController>();
         _view = GetComponentInChildren<SpriteRenderer>();
         _startPos = new Vector2(transform.position.x, transform.position.y);
-        _collectables = FindObjectsOfType<Collectable>();
 
+        _player.FirstPlatformAfterGlide += (col) => SetTrigger(true);
+        _player.DepletionFinished += (endType) => RestartStuff();
+
+        _camController.OnPlatformSnapFinished += (newPos) => transform.position = newPos;
     }
 
     public void SetTrigger(bool asTrigger)
@@ -29,14 +31,7 @@ public class BottomCheck : MonoBehaviour
         _collider2D.isTrigger = asTrigger;
     }
 
-    private void Update()
-    {
-        if (_collider2D.isTrigger)
-        {
-            transform.position = _camController.GetCameraDeathZone();
-        }
-    }
-
+    
     private void OnTriggerEnter2D(Collider2D collision)
     {
         if (collision != null && collision.CompareTag("Player"))
@@ -47,21 +42,18 @@ public class BottomCheck : MonoBehaviour
 
     public IEnumerator RestartStuff()
     {
-        _platformManager.Reset();
+        _player.gameObject.SetActive(false);
         _camController.Freeze();
         yield return new WaitForSeconds(0.5f);
         if (_camController != null)
         {
             _camController.Reset();
         }
-        yield return new WaitForSeconds(0.5f);
-        foreach (Collectable coll in _collectables)
-        {
-            coll.Reset();
-        }
-        yield return new WaitForSeconds(0.5f);
+        _platformManager.Reset();
+        yield return new WaitForSeconds(1.5f);
         if (_player != null)
         {
+            _player.gameObject.SetActive(true);
             _player.Reset();
         }
         yield return new WaitForSeconds(0.5f);
