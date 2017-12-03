@@ -79,7 +79,7 @@ public class Player : MonoBehaviour
     public float m_drag = 10.0f;
     public float m_velocityThreshold = 0.5f;
 
-    public Collider2D deadZone;
+    public BottomCheck deadZone;
 
 
     public int Collected
@@ -121,6 +121,10 @@ public class Player : MonoBehaviour
     private float _lastJumpRequest;
 
     private bool _depleting;
+    public bool Depleting
+    {
+        get { return _depleting; }
+    }
 
     public bool Jumping
     {
@@ -162,7 +166,7 @@ public class Player : MonoBehaviour
         }
 
         m_impulse = Vector2.zero;
-        m_impulse.x = Input.GetAxis("Horizontal");
+        m_impulse.x = _canMove ? Input.GetAxis("Horizontal") : 0f;
 
         m_wasFalling = m_falling;
 
@@ -286,18 +290,28 @@ public class Player : MonoBehaviour
 
         float rayDelta = _colliderRef.size.x / (m_vertRaysCount - 1);
         float rayDistance = _colliderRef.size.y * 0.55f;
+        ContactFilter2D filter = new ContactFilter2D();
+        filter.useTriggers = false;
+        filter.useLayerMask = true;
+        filter.layerMask = RaycastLayers.groundCollisions;
+        RaycastHit2D[] results = new RaycastHit2D[1];             
+
         for (int i = 0; i < m_vertRaysCount; ++i)
         {
             //-Debug.DrawRay(origin, Vector2.down * rayDistance, Color.green, 0.4f);
-            raycasts[i] = Physics2D.Raycast(origin, Vector2.down, rayDistance, RaycastLayers.groundCollisions);
-            if (raycasts[i].collider != null)
+            int numResults = Physics2D.Raycast(origin, Vector2.down, filter, results, rayDistance);
+            if (numResults > 0)
             {
-                foundGround = true;
-                if (raycasts[i].distance < minDistance)
+                raycasts[i] = results[0];
+                if (raycasts[i].collider != null)
                 {
-                    minDistance = raycasts[i].distance;
-                    idx = i;
-                    bestCollider = raycasts[i].collider;
+                    foundGround = true;
+                    if (raycasts[i].distance < minDistance)
+                    {
+                        minDistance = raycasts[i].distance;
+                        idx = i;
+                        bestCollider = raycasts[i].collider;
+                    }
                 }
             }
             origin.x += rayDelta;
@@ -314,9 +328,9 @@ public class Player : MonoBehaviour
 
             if (bestCollider.CompareTag("Finish") && !_depleting)
             {
-                BeginDepleting();
+                //BeginDepleting();
             }
-            else if (bestCollider.CompareTag("Respawn"))
+            else if (_depleting && bestCollider.CompareTag("Respawn"))
             {
                 FinaliseDepleting(DepleteEnd.ArrivedToGoal);
             }
@@ -367,7 +381,7 @@ public class Player : MonoBehaviour
         else
         {
             m_wasJumping = m_jumping;
-            m_jumping = Input.GetButton("Jump");
+            m_jumping = _canMove ? Input.GetButton("Jump") : false;
             if (m_jumping)
             {
                 _lastJumpRequest = Time.time;
@@ -436,13 +450,22 @@ public class Player : MonoBehaviour
 
     public void EnableMovement(bool enabled)
     {
+        if (enabled)
+        {
+            Debug.Log("READY!");
+        }
         _canMove = enabled;
     }
 
     public void Reset()
     {
-        _playerBody.MovePosition(_startPos);
+        _playerBody.position = _startPos;
         m_velocity = Vector2.zero;
+        _energyLeft = m_maxEnergy;
+        _currentDepletionRate = m_depletionRate;
+        Collected = 0;
+        _depleting = false;
+        _canMove = true;
     }
 
     public void OnCollected(Collectable item)
@@ -463,6 +486,10 @@ public class Player : MonoBehaviour
         if (!_depleting)
         {
             BeginDepleting();
+            if (deadZone != null)
+            {
+                deadZone.SetTrigger(true);
+            }
         }
     }
 
@@ -476,7 +503,11 @@ public class Player : MonoBehaviour
     {
         float amount = _currentDepletionRate * Time.deltaTime;
         _energyLeft = Mathf.Max(_energyLeft - amount, 0);
-        Debug.Log("Energy left: " + _energyLeft);
+        if (Mathf.FloorToInt(_energyLeft) % 10 == 0)
+        { 
+            Debug.Log("Energy left: " + _energyLeft);
+        }
+
         if (Mathf.Approximately(_energyLeft, 0f))
         {
             FinaliseDepleting(DepleteEnd.Exhausted);
@@ -488,5 +519,7 @@ public class Player : MonoBehaviour
     {
         _depleting = false;
         // do stuff
+        EnableMovement(false);
+        deadZone.RestartStuff();
     }
 }

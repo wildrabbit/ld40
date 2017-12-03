@@ -8,6 +8,7 @@ public class CameraController : MonoBehaviour
     public float topSnapThreshold = 0.2f;
     public float bottomSnapThreshold = 0.2f;
     public float levelHeight;
+    public float deathZoneOffset = 0.0f;
 
     public bool snapToPlatform = false;
 
@@ -20,6 +21,8 @@ public class CameraController : MonoBehaviour
     float _botSnap;
 
     Tweener motion;
+
+    bool _frozen;
     
     public void SnapToHeight(float height)
     {
@@ -43,16 +46,16 @@ public class CameraController : MonoBehaviour
     }
 	void Start ()
     {
+        _frozen = false;
         DOTween.Init(false, true, LogBehaviour.ErrorsOnly);
         SetPlayer(GameObject.Find("Player").GetComponent<Player>());
         SetCamera(GetComponent<Camera>());
         _startPos = new Vector3(transform.position.x, -_cam.orthographicSize, transform.position.z);
-        var startTween = _cam.transform.DOMoveY(_startPos.y, 2f).SetEase(Ease.InOutQuint).OnComplete(StartTransitionComplete);
-
         float size = _cam.orthographicSize * 2;
         _topSnap = -size * (topSnapThreshold + 0.5f);
         _botSnap = -levelHeight + size * (bottomSnapThreshold + 0.5f);
 
+        var startTween = _cam.transform.DOMoveY(_startPos.y, 2f).SetEase(Ease.InOutQuint).OnComplete(StartTransitionComplete);
     }
 
     void StartTransitionComplete()
@@ -64,17 +67,24 @@ public class CameraController : MonoBehaviour
     // Update is called once per frame
     void Update ()
     {
+        if (_frozen) return;
         if (_target == null) return;
         float targetHeight = _target.position.y;
         if (targetHeight < _topSnap && targetHeight > _botSnap)
         {
-            Player player = _target.GetComponent<Player>();
-            if (player != null && player.Jumping)
+            if (_player != null && (_player.Jumping))
             {
                 return;
             }
         }
         else targetHeight = FollowNSnap();
+
+        if (_player.Depleting && targetHeight < _cam.transform.position.y)
+        {
+            motion.Kill();
+            motion = null;
+            return;
+        }
 
         if (motion == null)
         {
@@ -99,9 +109,25 @@ public class CameraController : MonoBehaviour
         return _target.position.y;
     }
 
+    public void Freeze()
+    {
+        if (motion != null)
+        {
+            motion.Kill();
+            motion = null;
+        }
+        _frozen = true;
+
+    }
     public void Reset()
     {
         _cam.transform.position = _startPos;
         motion = null;
+        _frozen = false;
+    }
+
+    public Vector2 GetCameraDeathZone()
+    {
+        return (Vector2)_cam.transform.position - new Vector2(0, _cam.orthographicSize + deathZoneOffset);
     }
 }

@@ -1069,11 +1069,11 @@ Prefab:
     m_Modifications:
     - target: {fileID: 4931156446836522, guid: d7ac91bc3ba333a4d969d73d1c0bb952, type: 2}
       propertyPath: m_LocalPosition.x
-      value: -0.04
+      value: 0.05
       objectReference: {fileID: 0}
     - target: {fileID: 4931156446836522, guid: d7ac91bc3ba333a4d969d73d1c0bb952, type: 2}
       propertyPath: m_LocalPosition.y
-      value: -34.41
+      value: 2.7
       objectReference: {fileID: 0}
     - target: {fileID: 4931156446836522, guid: d7ac91bc3ba333a4d969d73d1c0bb952, type: 2}
       propertyPath: m_LocalPosition.z
@@ -1102,8 +1102,17 @@ Prefab:
     - target: {fileID: 114546345968246558, guid: d7ac91bc3ba333a4d969d73d1c0bb952,
         type: 2}
       propertyPath: m_depletionCollectionIncrease
-      value: 0.2
+      value: 0.3
       objectReference: {fileID: 0}
+    - target: {fileID: 1716850938614916, guid: d7ac91bc3ba333a4d969d73d1c0bb952, type: 2}
+      propertyPath: m_TagString
+      value: Player
+      objectReference: {fileID: 0}
+    - target: {fileID: 114546345968246558, guid: d7ac91bc3ba333a4d969d73d1c0bb952,
+        type: 2}
+      propertyPath: deadZone
+      value: 
+      objectReference: {fileID: 1432096251}
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 100100000, guid: d7ac91bc3ba333a4d969d73d1c0bb952, type: 2}
   m_IsPrefabParent: 0
@@ -2366,6 +2375,7 @@ MonoBehaviour:
   topSnapThreshold: 0.2
   bottomSnapThreshold: 0.2
   levelHeight: 36
+  deathZoneOffset: 0
   snapToPlatform: 0
 --- !u!81 &1919843847
 AudioListener:
