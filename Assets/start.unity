@@ -1099,80 +1099,10 @@ Prefab:
       propertyPath: m_RootOrder
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 70034811068337210, guid: d7ac91bc3ba333a4d969d73d1c0bb952,
-        type: 2}
-      propertyPath: m_Direction
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 70034811068337210, guid: d7ac91bc3ba333a4d969d73d1c0bb952,
-        type: 2}
-      propertyPath: m_Size.y
-      value: 0.87
-      objectReference: {fileID: 0}
-    - target: {fileID: 70034811068337210, guid: d7ac91bc3ba333a4d969d73d1c0bb952,
-        type: 2}
-      propertyPath: m_Size.x
-      value: 0.8
-      objectReference: {fileID: 0}
     - target: {fileID: 114546345968246558, guid: d7ac91bc3ba333a4d969d73d1c0bb952,
         type: 2}
-      propertyPath: m_acceleration
-      value: 18
-      objectReference: {fileID: 0}
-    - target: {fileID: 114546345968246558, guid: d7ac91bc3ba333a4d969d73d1c0bb952,
-        type: 2}
-      propertyPath: m_maxSpeed
-      value: 6
-      objectReference: {fileID: 0}
-    - target: {fileID: 114546345968246558, guid: d7ac91bc3ba333a4d969d73d1c0bb952,
-        type: 2}
-      propertyPath: m_maxJumpTime
-      value: 0.6
-      objectReference: {fileID: 0}
-    - target: {fileID: 114546345968246558, guid: d7ac91bc3ba333a4d969d73d1c0bb952,
-        type: 2}
-      propertyPath: m_minHeight
-      value: 0.8
-      objectReference: {fileID: 0}
-    - target: {fileID: 50028091609210360, guid: d7ac91bc3ba333a4d969d73d1c0bb952,
-        type: 2}
-      propertyPath: m_UseFullKinematicContacts
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 50028091609210360, guid: d7ac91bc3ba333a4d969d73d1c0bb952,
-        type: 2}
-      propertyPath: m_BodyType
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 50028091609210360, guid: d7ac91bc3ba333a4d969d73d1c0bb952,
-        type: 2}
-      propertyPath: m_GravityScale
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 50028091609210360, guid: d7ac91bc3ba333a4d969d73d1c0bb952,
-        type: 2}
-      propertyPath: m_CollisionDetection
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 50028091609210360, guid: d7ac91bc3ba333a4d969d73d1c0bb952,
-        type: 2}
-      propertyPath: m_Interpolate
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 114546345968246558, guid: d7ac91bc3ba333a4d969d73d1c0bb952,
-        type: 2}
-      propertyPath: m_horzRaysCount
-      value: 5
-      objectReference: {fileID: 0}
-    - target: {fileID: 114546345968246558, guid: d7ac91bc3ba333a4d969d73d1c0bb952,
-        type: 2}
-      propertyPath: m_maxHeight
-      value: 2.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 114546345968246558, guid: d7ac91bc3ba333a4d969d73d1c0bb952,
-        type: 2}
-      propertyPath: m_jumpInterval
-      value: 0.1
+      propertyPath: m_depletionCollectionIncrease
+      value: 0.2
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 100100000, guid: d7ac91bc3ba333a4d969d73d1c0bb952, type: 2}
@@ -1693,7 +1623,7 @@ GameObject:
   - component: {fileID: 1432096251}
   m_Layer: 9
   m_Name: Bottom
-  m_TagString: Untagged
+  m_TagString: Finish
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -2691,6 +2621,14 @@ Prefab:
     - target: {fileID: 4472705875816856, guid: 508e31202e9bb5d4ab58faa649718bd7, type: 2}
       propertyPath: m_RootOrder
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1248006560064648, guid: 508e31202e9bb5d4ab58faa649718bd7, type: 2}
+      propertyPath: m_Name
+      value: StartPlatform
+      objectReference: {fileID: 0}
+    - target: {fileID: 1248006560064648, guid: 508e31202e9bb5d4ab58faa649718bd7, type: 2}
+      propertyPath: m_TagString
+      value: Respawn
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 100100000, guid: 508e31202e9bb5d4ab58faa649718bd7, type: 2}

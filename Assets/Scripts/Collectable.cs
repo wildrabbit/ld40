@@ -10,8 +10,7 @@ public class Collectable : MonoBehaviour
     SpriteRenderer _viewRef;
 
     Tweener defaultTween;
-    Tweener deathTween;
-
+    
 	// Use this for initialization
 	void Start () {
         _player = FindObjectOfType<Player>();
@@ -35,7 +34,7 @@ public class Collectable : MonoBehaviour
             seq.Append(_viewRef.transform.DOScale(1.1f, 0.025f));
             seq.Append(_viewRef.transform.DOScale(0.8f, 0.3f));
             seq.Insert(0.025f, _viewRef.DOFade(0.0f, 0.3f));
-
+            seq.AppendCallback(() => Destroy(gameObject, 0.1f));
             _player.OnCollected(this);
         }
     }

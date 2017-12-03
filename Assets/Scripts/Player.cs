@@ -2,6 +2,12 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+public enum DepleteEnd
+{
+    ArrivedToGoal,
+    Exhausted
+}
+
 public static class RaycastLayers
 {
     public static readonly int wallCollisions;
@@ -26,11 +32,16 @@ public class Player : MonoBehaviour
 {
     private const float SQRT_2 = 1.41421356237f;
 
+    [Header("Energy stuff")]
+    [Tooltip("Maximum energy")]
+    public float m_maxEnergy = 100.0f;
+    [Tooltip("Rate of energy depletion (in units/s)")]
+    public float m_depletionRate = 1f;
+    [Tooltip("Collectable contribution (in units/s)")]
+    public float m_depletionCollectionIncrease = 0.1f;
+    float _energyLeft = 0;
+    float _currentDepletionRate = 0;
 
-    public int Collected
-    {
-        get; private set;
-    }
 
     [Header("Collision tweaks")]
     public int m_vertRaysCount = 3;
@@ -68,6 +79,13 @@ public class Player : MonoBehaviour
     public float m_drag = 10.0f;
     public float m_velocityThreshold = 0.5f;
 
+    public Collider2D deadZone;
+
+
+    public int Collected
+    {
+        get; private set;
+    }
 
     //------------------------------------
     private float m_gravity;
@@ -102,6 +120,8 @@ public class Player : MonoBehaviour
     private bool _jumpMotion;
     private float _lastJumpRequest;
 
+    private bool _depleting;
+
     public bool Jumping
     {
         get { return m_jumping || _jumpMotion; }
@@ -126,19 +146,27 @@ public class Player : MonoBehaviour
 
         m_facingRight = true;
         m_jumpCount = 0;
+
+        Collected = 0;
+        _energyLeft = m_maxEnergy;
+        _currentDepletionRate = m_depletionRate;
+        _depleting = false;
     }
 
     // Update is called once per frame
     void Update ()
     {
+        if (_depleting)
+        {
+            UpdateDepleting();
+        }
+
         m_impulse = Vector2.zero;
         m_impulse.x = Input.GetAxis("Horizontal");
 
         m_wasFalling = m_falling;
 
         DetectCeiling();
-
-
 
         // Lateral checks:
         // Constant speed, don't do anything special
@@ -254,6 +282,7 @@ public class Player : MonoBehaviour
         RaycastHit2D[] raycasts = new RaycastHit2D[m_vertRaysCount];
         float minDistance = Mathf.Infinity;
         int idx = -1;
+        Collider2D bestCollider = null;
 
         float rayDelta = _colliderRef.size.x / (m_vertRaysCount - 1);
         float rayDistance = _colliderRef.size.y * 0.55f;
@@ -268,6 +297,7 @@ public class Player : MonoBehaviour
                 {
                     minDistance = raycasts[i].distance;
                     idx = i;
+                    bestCollider = raycasts[i].collider;
                 }
             }
             origin.x += rayDelta;
@@ -281,6 +311,15 @@ public class Player : MonoBehaviour
             m_grounded = true;
             m_falling = false;
             _jumpMotion = false;
+
+            if (bestCollider.CompareTag("Finish") && !_depleting)
+            {
+                BeginDepleting();
+            }
+            else if (bestCollider.CompareTag("Respawn"))
+            {
+                FinaliseDepleting(DepleteEnd.ArrivedToGoal);
+            }
         }
         else
         {
@@ -339,10 +378,7 @@ public class Player : MonoBehaviour
 
             if (groundJump || multiJump)
             {
-                _jumpStartHeight = transform.position.y;
-                _jumpMotion = true;
-                m_velocity.y = m_initialJumpSpeed;
-                m_jumpCount++;
+                BeginJumping();
             }
         }
         m_falling = m_velocity.y < 0.0f;
@@ -412,5 +448,45 @@ public class Player : MonoBehaviour
     public void OnCollected(Collectable item)
     {
         Collected++;
+        if (_depleting)
+        {
+            _currentDepletionRate += m_depletionCollectionIncrease;
+        }
+    }
+
+    public void BeginJumping()
+    {
+        _jumpStartHeight = transform.position.y;
+        _jumpMotion = true;
+        m_velocity.y = m_initialJumpSpeed;
+        m_jumpCount++;
+        if (!_depleting)
+        {
+            BeginDepleting();
+        }
+    }
+
+    public void BeginDepleting()
+    {
+        _currentDepletionRate = m_depletionRate + Collected * m_depletionCollectionIncrease;
+        _depleting = true;
+    }
+
+    public void UpdateDepleting()
+    {
+        float amount = _currentDepletionRate * Time.deltaTime;
+        _energyLeft = Mathf.Max(_energyLeft - amount, 0);
+        Debug.Log("Energy left: " + _energyLeft);
+        if (Mathf.Approximately(_energyLeft, 0f))
+        {
+            FinaliseDepleting(DepleteEnd.Exhausted);
+        }
+
+    }
+
+    public void FinaliseDepleting(DepleteEnd type)
+    {
+        _depleting = false;
+        // do stuff
     }
 }
