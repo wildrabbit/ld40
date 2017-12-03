@@ -67,6 +67,12 @@ public class CameraController : MonoBehaviour
         if (_target == null) return;
         if (_target.position.y < _topSnap && _target.position.y > _botSnap)
         {
+            Player player = _target.GetComponent<Player>();
+            if (player != null && player.Jumping)
+            {
+                return;
+            }
+
             if (motion == null)
             {
                 motion = _cam.transform.DOLocalMoveY(_target.position.y, 0.3f).OnComplete(() => motion = null);

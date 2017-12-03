@@ -26,8 +26,13 @@ public class Player : MonoBehaviour
 {
     private const float SQRT_2 = 1.41421356237f;
 
+
+    public int Collected
+    {
+        get; private set;
+    }
+
     [Header("Collision tweaks")]
-    public LayerMask _groundMask;
     public int m_vertRaysCount = 3;
     public int m_horzRaysCount = 3;
     public float m_angleLeeway = 5.0f;
@@ -50,6 +55,9 @@ public class Player : MonoBehaviour
 
     [Tooltip("Consecutive jump limit (2 => double jump)")]
     public int m_maxJumps = 1;
+
+    [Tooltip("Grace period to recognise a jump press before hitting ground")]
+    public float m_jumpInterval = 0.02f;
 
     [Tooltip("Max. fall speed")]
     public float m_maxFallSpeed = 30.0f;
@@ -82,7 +90,7 @@ public class Player : MonoBehaviour
     private float m_jumpHeight;
 
     private Vector2 m_velocity;
-    
+
     CapsuleCollider2D _colliderRef;
 
     private bool _canMove;
@@ -90,12 +98,19 @@ public class Player : MonoBehaviour
     private Rigidbody2D _playerBody;
 
     private Vector2 m_impulse;
+    private float _jumpStartHeight;
+    private bool _jumpMotion;
+    private float _lastJumpRequest;
+
+    public bool Jumping
+    {
+        get { return m_jumping || _jumpMotion; }
+    }
     
 	// Use this for initialization
 	void Start()
     {
         _canMove = false;
-        _groundMask = (1 << LayerMask.NameToLayer("Ground"));
         _startPos = new Vector2(transform.position.x, transform.position.y);
         _colliderRef = GetComponent<CapsuleCollider2D>();
         _playerBody = GetComponent<Rigidbody2D>();
@@ -105,6 +120,7 @@ public class Player : MonoBehaviour
 
         m_jumping = m_wasJumping = false;
         m_jumpHeight = transform.position.y;
+        _jumpMotion = false;
 
         m_falling = m_wasFalling = !m_grounded;
 
@@ -118,7 +134,6 @@ public class Player : MonoBehaviour
         m_impulse = Vector2.zero;
         m_impulse.x = Input.GetAxis("Horizontal");
 
-        m_wasJumping = m_jumping;
         m_wasFalling = m_falling;
 
         DetectCeiling();
@@ -241,7 +256,7 @@ public class Player : MonoBehaviour
         int idx = -1;
 
         float rayDelta = _colliderRef.size.x / (m_vertRaysCount - 1);
-        float rayDistance = _colliderRef.size.y * 0.65f;
+        float rayDistance = _colliderRef.size.y * 0.55f;
         for (int i = 0; i < m_vertRaysCount; ++i)
         {
             //-Debug.DrawRay(origin, Vector2.down * rayDistance, Color.green, 0.4f);
@@ -265,6 +280,7 @@ public class Player : MonoBehaviour
             m_jumpCount = 0;
             m_grounded = true;
             m_falling = false;
+            _jumpMotion = false;
         }
         else
         {
@@ -291,6 +307,7 @@ public class Player : MonoBehaviour
     void FixedUpdate()
     {
         DetectGround();
+
         // Y-movement
         if (!m_grounded)
         {
@@ -299,10 +316,6 @@ public class Player : MonoBehaviour
             {
                 m_velocity.y = -m_maxFallSpeed;
             }
-        }
-        else
-        {
-            m_jumpCount = 0;
         }
 
         if (Input.GetButtonUp("Jump"))
@@ -314,15 +327,26 @@ public class Player : MonoBehaviour
         }
         else
         {
-            m_jumping = Input.GetButtonDown("Jump");
-
-            if ((m_jumping && !m_wasJumping) && (m_grounded || m_jumpCount < m_maxJumps))
+            m_wasJumping = m_jumping;
+            m_jumping = Input.GetButton("Jump");
+            if (m_jumping)
             {
+                _lastJumpRequest = Time.time;
+            }
+
+            bool multiJump = m_jumping && !m_wasJumping && m_jumpCount < m_maxJumps;
+            bool groundJump = ((m_jumping && !m_wasJumping)|| (Time.time - _lastJumpRequest < m_jumpInterval)) && m_grounded;
+
+            if (groundJump || multiJump)
+            {
+                _jumpStartHeight = transform.position.y;
+                _jumpMotion = true;
                 m_velocity.y = m_initialJumpSpeed;
                 m_jumpCount++;
             }
         }
         m_falling = m_velocity.y < 0.0f;
+        _jumpMotion = _jumpMotion && (m_velocity.y > 0f || (m_falling && transform.position.y > _jumpStartHeight));
 
         float oldVelocity = m_velocity.x;
         if (Mathf.Approximately(m_acceleration, 0.0f))
@@ -342,7 +366,7 @@ public class Player : MonoBehaviour
                 if (Mathf.Abs(m_velocity.x) > m_velocityThreshold)
                 {
                     int dragDirection = ((m_velocity.x > 0.0f) ? -1 : (m_velocity.x < 0.0f) ? 1 : 0);
-                    m_velocity.x += m_drag * dragDirection * Time.deltaTime;
+                    m_velocity.x += Mathf.Min(m_velocityThreshold, m_drag * Time.deltaTime) * dragDirection;
                 }
 
                 if (Mathf.Abs(m_velocity.x) < m_velocityThreshold)
@@ -362,9 +386,9 @@ public class Player : MonoBehaviour
         }
 
         Vector2 pos = _playerBody.position + m_velocity * Time.deltaTime;
-        _playerBody.MovePosition(pos);
+        _playerBody.position = pos;
 
-    }
+   }
 
     private void CalculateJumpVars()
     {
@@ -383,5 +407,10 @@ public class Player : MonoBehaviour
     {
         _playerBody.MovePosition(_startPos);
         m_velocity = Vector2.zero;
+    }
+
+    public void OnCollected(Collectable item)
+    {
+        Collected++;
     }
 }
