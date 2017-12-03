@@ -44,13 +44,14 @@ public class PlatformManager : MonoBehaviour
     {
         foreach (Collectable c in _standaloneCollectables)
         {
+            c.Reset();
             c.gameObject.SetActive(true);
         }
     }
 
     public void SetSolid(bool param)
     {
-        _rootPlatform.SetSolid(true);
+        _rootPlatform.SetSolid(param);
         //foreach (Platform p in _platforms)
         //{
         //    p.SetSolid(param);

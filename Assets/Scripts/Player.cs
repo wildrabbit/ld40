@@ -128,6 +128,7 @@ public class Player : MonoBehaviour
     CapsuleCollider2D _colliderRef;
 
     private bool _canMove;
+    private bool _paused;
     private Vector2 _startPos;
     private Rigidbody2D _playerBody;
 
@@ -181,11 +182,14 @@ public class Player : MonoBehaviour
         _depleting = false;
 
         _gliding = true;
+        _paused = false;
     }
 
     // Update is called once per frame
     void Update ()
     {
+        if (_paused) return;
+
         if (_depleting)
         {
             UpdateDepleting();
@@ -351,7 +355,7 @@ public class Player : MonoBehaviour
             m_grounded = true;
             m_falling = false;
             _jumpMotion = false;
-            if (!_depleting && bestCollider.CompareTag("Finish"))
+            if (_gliding && bestCollider.CompareTag("Finish"))
             {
                 _gliding = false;
                 if (GlideFinished != null)
@@ -502,12 +506,13 @@ public class Player : MonoBehaviour
         m_jumpTermVelocity = Mathf.Sqrt(m_initialJumpSpeed * m_initialJumpSpeed - 2 * m_gravity * (m_maxHeight - m_minHeight));
     }
 
+    public void Pause(bool paused)
+    {
+        _paused = paused;
+    }
+
     public void EnableMovement(bool enabled)
     {
-        if (enabled)
-        {
-            Debug.Log("READY!");
-        }
         _canMove = enabled;
     }
 

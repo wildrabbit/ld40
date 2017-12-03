@@ -78,13 +78,15 @@ public class CameraController : MonoBehaviour
         _botSnap = -levelHeight + size * (bottomSnapThreshold + 0.5f);
 
         _targetHeight = _startPos.y;
-        float time = Mathf.Max((_targetHeight - _cam.transform.position.y) / camSpeed, 0.01f);
+        float time = Mathf.Max(Mathf.Abs(_targetHeight - _cam.transform.position.y) / camSpeed, 0.01f);
 
         var startTween = _cam.transform.DOMoveY(_targetHeight, time).SetEase(Ease.InOutQuint).OnComplete(StartTransitionComplete);
+        _player.Pause(true);
     }
 
     void StartTransitionComplete()
     {
+        _player.Pause(false);
         _player.EnableMovement(true);
         SetTarget(_player.transform);
     }
