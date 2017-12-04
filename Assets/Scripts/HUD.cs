@@ -10,10 +10,15 @@ public class HUD : MonoBehaviour
     public Sprite itemBoost;
     public Color dangerTint;
 
+    public Image _boostStatus;
     public Image _collectedIcon;
     public Text _collectedLabel;
-    public Text _boostHint;
     public Text _gameFinished;
+
+    public Sprite _boostOff;
+    public Sprite _boostAvailable;
+    public Sprite _boostLoading;
+    public Sprite _boostRelease;
 
     Player _player;
     Level _levelData;
@@ -30,9 +35,8 @@ public class HUD : MonoBehaviour
         _player = FindObjectOfType<Player>();
         _collectedIcon = transform.Find("CollectedIcon").GetComponent<Image>();
         _collectedLabel = transform.FindRecursive("Collected").GetComponent<Text>();
-        _boostHint = transform.Find("BoostHint").GetComponent<Text>();
-        _gameFinished = transform.Find("GameFinished").GetComponent<Text>();
-
+       _gameFinished = transform.Find("GameFinished").GetComponent<Text>();
+        _boostStatus = transform.Find("BoostStatus").GetComponent<Image>();
         _gameFinished.enabled = false;
 
         _player.GameFinished += OnGameFinished;
@@ -62,13 +66,19 @@ public class HUD : MonoBehaviour
         if (!_player.CanUseBoost)
         {
             _collectedIcon.color = _player.Collected < _levelData.required ? dangerTint : Color.white;
-            _boostHint.enabled = false;
+            _boostStatus.sprite = _boostOff;
         }
         else
         {
             _collectedIcon.color = Color.white;
-            _boostHint.enabled = true;
-            _boostHint.text = string.Format(kBoostHint, _player.boostCost);
+            if (_player.ChargingBoost)
+            {
+                _boostStatus.sprite = _player.ChargingFinished ? _boostRelease : _boostLoading;
+            }
+            else
+            {
+                _boostStatus.sprite = _boostAvailable;
+            }
         }
 
         _collectedLabel.text = string.Format(kCounterLabelPattern, _player.Collected, _levelData.required);

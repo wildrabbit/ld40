@@ -15,10 +15,13 @@ public class Collectable : MonoBehaviour
     public TweenCallback OnCollected;
     public TweenCallback OnCollectStarted;
 
+    AudioSource _source;
+
     // Use this for initialization
     void Awake () {
         _colliderRef = GetComponent<CircleCollider2D>();
         _viewRef = GetComponentInChildren<SpriteRenderer>();
+        _source = GetComponent<AudioSource>();
 	}
 
     private void Start()
@@ -37,6 +40,7 @@ public class Collectable : MonoBehaviour
     {
         if (collision.GetComponent<Player>())
         {
+            _source.Play();
             _colliderRef.enabled = false;
             defaultTween.Kill();
             if (OnCollectStarted != null)

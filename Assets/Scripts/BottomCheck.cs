@@ -60,6 +60,9 @@ public class BottomCheck : MonoBehaviour
     public IEnumerator RestartStuff()
     {
         Debug.Log("Restart!");
+        _player.PlayLost();
+        yield return new WaitForSeconds(0.7f);
+        _player.Reset();
         _player.gameObject.SetActive(false);
         _camController.Freeze();
         yield return new WaitForSeconds(0.5f);
@@ -74,7 +77,6 @@ public class BottomCheck : MonoBehaviour
         if (_player != null)
         {
             _player.gameObject.SetActive(true);
-            _player.Reset();
         }
         
     }

@@ -163,9 +163,16 @@ public class Player : MonoBehaviour
 
     private Collider2D _lastCollider;
     private Level _levelData;
-    
-	// Use this for initialization
-	void Start()
+
+    public AudioClip jumpClip;
+    public AudioClip winClip;
+    public AudioClip loseClip;
+    public AudioClip boostClip;
+
+    AudioSource _audio;
+
+    // Use this for initialization
+    void Start()
     {
         _levelData = FindObjectOfType<Level>();
         _rendererRef = transform.Find("View").GetComponent<SpriteRenderer>();
@@ -176,6 +183,8 @@ public class Player : MonoBehaviour
         _playerBody = GetComponent<Rigidbody2D>();
 
         _endColliderRef = GameObject.FindGameObjectWithTag("Finish").GetComponent<Collider2D>();
+
+        _audio = GetComponent<AudioSource>();
 
         CalculateJumpVars();
         DetectGround();
@@ -235,6 +244,20 @@ public class Player : MonoBehaviour
         UpdateBoostTimers();
     }
 
+    public bool ChargingBoost
+    {
+        get { return CanUseBoost && _elapsedBoostCharged > 0; }
+    }
+
+    public bool ChargingFinished
+    {
+        get { return CanUseBoost && _elapsedBoostCharged >= requiredBoostChargeTime; }
+    }
+
+    public void PlayLost()
+    {
+        _audio.PlayOneShot(loseClip);
+    }
 
     void StartBoost()
     {
@@ -246,6 +269,7 @@ public class Player : MonoBehaviour
             m_jumpCount++;
             Collected -= boostCost;
             ApplyBoost();
+            _audio.PlayOneShot(boostClip);
         }
         else
         {
@@ -356,7 +380,7 @@ public class Player : MonoBehaviour
                             //transform.Translate(direction * (raycasts[i].distance - collHW));
                             //transform.position = pos;
 
-                            bool newFacingRight = m_velocity.x > 0.0f || (m_facingRight && Mathf.Abs(m_velocity.x) < m_velocityThreshold);
+                            bool newFacingRight = m_velocity.x > 0.0f || (m_facingRight && Mathf.Abs(m_velocity.x) < m_velocityFlipThreshold);
                             if ((newFacingRight && !m_facingRight) || (!newFacingRight && m_facingRight))
                             {
                                 Vector3 scale = transform.localScale;
@@ -531,6 +555,7 @@ public class Player : MonoBehaviour
                     if (!_boosting && (groundJump || multiJump))
                     {
                         BeginJumping();
+                        _audio.PlayOneShot(jumpClip);
                     }
                 }
                 else
@@ -586,19 +611,17 @@ public class Player : MonoBehaviour
                 m_velocity.x = 0.0f;
             }
 
-            if (Mathf.Abs(m_impulse.x) < 0.1f)
+            Debug.Log(m_impulse.x);
+            if (Mathf.Abs(m_impulse.x) < 0.25f)
             {
                 int oldSign = m_velocity.x > 0 ? 1 : (m_velocity.x < 0) ? -1 : 0;
                 if (Mathf.Abs(m_velocity.x) > m_velocityThreshold)
                 {
-                    int dragDirection = ((m_velocity.x > 0.0f) ? -1 : (m_velocity.x < 0.0f) ? 1 : 0);
-                    float dragAmount = m_drag * Time.deltaTime;
-                    Debug.Log("Applying drag: velocity: " + m_velocity.x + ", DRAG: " + dragAmount + ", impulse: " + m_impulse.x);
-                    m_velocity.x += dragAmount * dragDirection;
+                    m_velocity.x *= 0.25f;
                 }
 
-                int newSign = ((m_velocity.x > 0.0f) ? -1 : (m_velocity.x < 0.0f) ? 1 : 0);
-                if (Mathf.Abs(m_velocity.x) < m_velocityThreshold || newSign != oldSign)
+                
+                if (Mathf.Abs(m_velocity.x) < m_velocityThreshold)
                 {
                     m_velocity.x = 0.0f;
                 }
@@ -643,7 +666,7 @@ public class Player : MonoBehaviour
 
     public void Reset()
     {
-        _playerBody.position = _startPos;
+        transform.position = _startPos;
         m_velocity = Vector2.zero;
         _energyLeft = m_maxEnergy;
         _currentDepletionRate = m_depletionRate;
@@ -700,7 +723,9 @@ public class Player : MonoBehaviour
         // do stuff
         EnableMovement(false);
         DepletionFinished(type);
-        GameFinished(Collected >= _levelData.required);
+        bool won = Collected >= _levelData.required;
+        _audio.PlayOneShot(won ? winClip : loseClip);
+        GameFinished(won);
     }
 
     public bool CanUseBoost

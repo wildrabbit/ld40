@@ -16,6 +16,7 @@ public class PlatformCollectable : MonoBehaviour
     Player _player;
     Collectable _collectable;
     Platform _platform;
+    AudioSource _source;
 
 	// Use this for initialization
 	void Start ()
@@ -23,6 +24,7 @@ public class PlatformCollectable : MonoBehaviour
         _player = FindObjectOfType<Player>();
         _collectable = GetComponentInChildren<Collectable>();
         _platform = GetComponentInChildren<Platform>();
+        _source = GetComponent<AudioSource>();
         SetState(CollectableState.Crystal, true);
     }
 	
@@ -56,6 +58,7 @@ public class PlatformCollectable : MonoBehaviour
         }
         else if (newState == CollectableState.Platform)
         {
+            _source.Play();
             _platform.gameObject.SetActive(true);
             _collectable.gameObject.SetActive(false);
             _platform.SetSolid(true);
