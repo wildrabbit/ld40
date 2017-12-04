@@ -254,9 +254,9 @@ public class Player : MonoBehaviour
         get { return CanUseBoost && _elapsedBoostCharged >= requiredBoostChargeTime; }
     }
 
-    public void PlayLost()
+    public void PlayEnd(bool won)
     {
-        _audio.PlayOneShot(loseClip);
+        _audio.PlayOneShot(won ? winClip : loseClip);
     }
 
     void StartBoost()
@@ -724,7 +724,6 @@ public class Player : MonoBehaviour
         EnableMovement(false);
         DepletionFinished(type);
         bool won = Collected >= _levelData.required;
-        _audio.PlayOneShot(won ? winClip : loseClip);
         GameFinished(won);
     }
 

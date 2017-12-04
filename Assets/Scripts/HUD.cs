@@ -52,12 +52,13 @@ public class HUD : MonoBehaviour
     {
         _gameFinished.enabled = true;
         _gameFinished.text = won ? kWon : kLost;
-        
+        _player.PlayEnd(won);
+        yield return new WaitForSeconds(0.7f);
         _player.gameObject.SetActive(false);
-        yield return new WaitForSeconds(1.0f);
+        yield return new WaitForSeconds(0.3f);
         yield return new WaitUntil(() => Input.anyKeyDown);
         _gameFinished.enabled = false;
-        yield return FindObjectOfType<BottomCheck>().RestartStuff();        
+        yield return FindObjectOfType<BottomCheck>().RestartStuff(!won);        
     }
 
     void Refresh()

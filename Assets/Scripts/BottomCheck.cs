@@ -57,27 +57,30 @@ public class BottomCheck : MonoBehaviour
         }
     }
 
-    public IEnumerator RestartStuff()
+    public IEnumerator RestartStuff(bool playLost = true)
     {
-        Debug.Log("Restart!");
-        _player.PlayLost();
-        yield return new WaitForSeconds(0.7f);
-        _player.Reset();
-        _player.gameObject.SetActive(false);
-        _camController.Freeze();
-        yield return new WaitForSeconds(0.5f);
-        if (_camController != null)
-        {
-            _camController.Reset();
-        }
-        _platformManager.Reset();
-        yield return new WaitForSeconds(1.5f);
-        Reset();
-        yield return new WaitForSeconds(0.5f);
-        if (_player != null)
-        {
-            _player.gameObject.SetActive(true);
-        }
+        if (playLost) _player.PlayEnd(false);
+        yield return new WaitForSeconds(2);
+        UnityEngine.SceneManagement.SceneManager.LoadScene(0);
+        //Debug.Log("Restart!");
+        //_player.PlayLost();
+        //yield return new WaitForSeconds(0.7f);
+        //_player.Reset();
+        //_player.gameObject.SetActive(false);
+        //_camController.Freeze();
+        //yield return new WaitForSeconds(0.5f);
+        //if (_camController != null)
+        //{
+        //    _camController.Reset();
+        //}
+        //_platformManager.Reset();
+        //yield return new WaitForSeconds(1.5f);
+        //Reset();
+        //yield return new WaitForSeconds(0.5f);
+        //if (_player != null)
+        //{
+        //    _player.gameObject.SetActive(true);
+        //}
         
     }
 
