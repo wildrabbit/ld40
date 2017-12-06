@@ -52,6 +52,7 @@ public class Player : MonoBehaviour
     bool _boosting = false;
     bool _impulseLocked = false;
     private float _elapsedBoostCharged = 0f;
+    bool _over = false;
 
 
     [Header("Collision tweaks")]
@@ -174,6 +175,7 @@ public class Player : MonoBehaviour
     // Use this for initialization
     void Start()
     {
+        _over = false;
         _levelData = FindObjectOfType<Level>();
         _rendererRef = transform.Find("View").GetComponent<SpriteRenderer>();
         _glidingRef = transform.Find("GlidingView").GetComponent<SpriteRenderer>();
@@ -222,7 +224,7 @@ public class Player : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (_paused) return;
+        if (_paused || _over) return;
 
         if (_depleting)
         {
@@ -263,6 +265,7 @@ public class Player : MonoBehaviour
     {
         if (CanUseBoost)
         {
+            Debug.Log("Start boost ok");
             _boosting = true;
             _elapsedBoost = 0.0f;
             _elapsedBoostCharged = -1.0f;
@@ -273,6 +276,7 @@ public class Player : MonoBehaviour
         }
         else
         {
+            Debug.Log("Start boost failed");
             _boosting = false;
             _elapsedBoost = -1.0f;
             _elapsedBoostCharged = -1.0f;
@@ -294,6 +298,7 @@ public class Player : MonoBehaviour
             _elapsedBoost += Time.deltaTime;
             if (_elapsedBoost >= boostDuration)
             {
+                Debug.Log("Reset boost");
                 _boosting = false;
                 _remainingBoostCooldown = boostCooldown;
             }
@@ -445,7 +450,7 @@ public class Player : MonoBehaviour
         if (foundGround)
         {
             //transform.Translate(Vector2.down * (minDistance - _colliderRef.size.y * 0.5f));
-
+            if (_boosting) { Debug.Log("Grounded while boosting!"); }
             m_velocity.y = 0.0f;
             m_jumpCount = 0;
             m_grounded = true;
@@ -489,6 +494,8 @@ public class Player : MonoBehaviour
 
     void LateUpdate()
     {
+        if (_paused || _over) return;
+
         if (m_velocity.magnitude > m_velocityFlipThreshold * SQRT_2)
         {
             bool newFacingRight = m_velocity.x > 0.0f || (m_facingRight && Mathf.Abs(m_velocity.x) < m_velocityFlipThreshold);
@@ -504,7 +511,7 @@ public class Player : MonoBehaviour
 
     void FixedUpdate()
     {
-        if (_paused) return;
+        if (_paused || _over) return;
 
         DetectGround();
 
@@ -558,45 +565,63 @@ public class Player : MonoBehaviour
                         _audio.PlayOneShot(jumpClip);
                     }
                 }
-                else
+                else if (CanUseBoost)
                 {
                     bool boostReleased = Input.GetButtonUp("Fire1") && _canMove && !_gliding;
                     bool boostJustPressed = Input.GetButtonDown("Fire1") && _canMove && !_gliding;
+                    if (boostReleased || boostJustPressed)
+                        Debug.Log("Boost released?" + boostReleased.ToString() + " Just pressed?" + boostJustPressed.ToString());
+
                     bool boostPressed = Input.GetButton("Fire1") && _canMove && !_gliding;
                     if (boostReleased)
                     {
-                        if (_elapsedBoostCharged > requiredBoostChargeTime)
+                        if (_elapsedBoostCharged >= requiredBoostChargeTime)
                         {
+                            Debug.Log("Ready to charge!" + boostReleased.ToString());
                             StartBoost();
                         }
                         else
                         {
+                            Debug.Log("Nope, reset!");
                             _elapsedBoostCharged = -1.0f;
+                            _rendererRef.color = Color.white;
                         }
                         _impulseLocked = false;
                     }
                     else if (boostPressed)
                     {
-                        if (CanUseBoost && _elapsedBoostCharged < 0f)
+                        if (_elapsedBoostCharged < 0f)
                         {
-                            if (Mathf.Abs(m_impulse.x) < 0.1f)
-                            {
-                                //_impulseLocked = true;
-                            }
                             _elapsedBoostCharged = 0.0f;
                         }
-                        else if (_elapsedBoostCharged >= 0)_elapsedBoostCharged += Time.deltaTime;
+                        else
+                        {
+                            _elapsedBoostCharged += Time.deltaTime;
+                        }
+
                         if (_elapsedBoostCharged >= requiredBoostChargeTime)
                         {
                             _rendererRef.color = Color.yellow;
+                        }
+                    }
+                    else
+                    {
+                        if (_elapsedBoostCharged >= requiredBoostChargeTime)
+                        {
+                            Debug.Log("Ready to charge!" + boostReleased.ToString());
+                            StartBoost();
+                        }
+                        else
+                        {
+                            _elapsedBoostCharged = -1.0f;
+                            _rendererRef.color = Color.white;
                         }
                     }
                 }
             }
         }
         m_falling = m_velocity.y < 0.0f;
-        _jumpMotion = _jumpMotion && (m_velocity.y > 0f || (m_falling && transform.position.y > _jumpStartHeight));
-
+        
         float oldVelocity = m_velocity.x;
         float maxSpeed = _gliding ? m_maxSpeedGliding : m_maxSpeed;
         if (Mathf.Approximately(m_acceleration, 0.0f))
@@ -637,13 +662,22 @@ public class Player : MonoBehaviour
             }
         }
 
-        if (_impulseLocked)
+        //if (_impulseLocked)
+        //{
+        //    m_velocity.x = 0;
+        //}
+        if (_boosting)
         {
-            m_velocity.x = 0;
+            Debug.Log("Final v.y:" + m_velocity.y + ", grounded?" + m_grounded);
+            Debug.Log("Old: " + transform.position.y + ", phys?" + _playerBody.position.y);
         }
-        Vector2 pos = _playerBody.position + m_velocity * Time.deltaTime;
-        _playerBody.position = pos;
-
+        Vector2 pos = (Vector2)transform.position + m_velocity * Time.deltaTime;
+        transform.position = pos;
+        
+        if (_boosting)
+        {
+            Debug.Log("New: " + transform.position.y + ", phys?" + _playerBody.position.y);
+        }
    }
 
     private void CalculateJumpVars()
@@ -724,6 +758,7 @@ public class Player : MonoBehaviour
         EnableMovement(false);
         DepletionFinished(type);
         bool won = Collected >= _levelData.required;
+        _over = true;
         GameFinished(won);
     }
 

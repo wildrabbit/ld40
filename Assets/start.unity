@@ -530,7 +530,7 @@ RectTransform:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 67207054}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -254, y: 464, z: 0}
+  m_LocalPosition: {x: -254.29501, y: 464.52444, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 1919231852}
@@ -2320,7 +2320,7 @@ RectTransform:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 411879425}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -270, y: 396, z: 0}
+  m_LocalPosition: {x: -270.295, y: 396.52444, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 1973096552}
@@ -8294,11 +8294,11 @@ Prefab:
     m_Modifications:
     - target: {fileID: 4931156446836522, guid: d7ac91bc3ba333a4d969d73d1c0bb952, type: 2}
       propertyPath: m_LocalPosition.x
-      value: 0.05
+      value: -1.56
       objectReference: {fileID: 0}
     - target: {fileID: 4931156446836522, guid: d7ac91bc3ba333a4d969d73d1c0bb952, type: 2}
       propertyPath: m_LocalPosition.y
-      value: -4.65
+      value: -33.17
       objectReference: {fileID: 0}
     - target: {fileID: 4931156446836522, guid: d7ac91bc3ba333a4d969d73d1c0bb952, type: 2}
       propertyPath: m_LocalPosition.z
@@ -8324,36 +8324,6 @@ Prefab:
       propertyPath: m_RootOrder
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 114546345968246558, guid: d7ac91bc3ba333a4d969d73d1c0bb952,
-        type: 2}
-      propertyPath: m_drag
-      value: 400
-      objectReference: {fileID: 0}
-    - target: {fileID: 114546345968246558, guid: d7ac91bc3ba333a4d969d73d1c0bb952,
-        type: 2}
-      propertyPath: m_velocityFlipThreshold
-      value: 0.1
-      objectReference: {fileID: 0}
-    - target: {fileID: 114546345968246558, guid: d7ac91bc3ba333a4d969d73d1c0bb952,
-        type: 2}
-      propertyPath: m_maxSpeed
-      value: 6
-      objectReference: {fileID: 0}
-    - target: {fileID: 114546345968246558, guid: d7ac91bc3ba333a4d969d73d1c0bb952,
-        type: 2}
-      propertyPath: m_velocityThreshold
-      value: 0.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 114546345968246558, guid: d7ac91bc3ba333a4d969d73d1c0bb952,
-        type: 2}
-      propertyPath: jumpClip
-      value: 
-      objectReference: {fileID: 8300000, guid: 558b86974f9acd143ab37730da0919ab, type: 3}
-    - target: {fileID: 114546345968246558, guid: d7ac91bc3ba333a4d969d73d1c0bb952,
-        type: 2}
-      propertyPath: boostClip
-      value: 
-      objectReference: {fileID: 8300000, guid: 54cc8222b4aa6c942afc175292ef8520, type: 3}
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 100100000, guid: d7ac91bc3ba333a4d969d73d1c0bb952, type: 2}
   m_IsPrefabParent: 0
@@ -12442,10 +12412,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   topSnapThreshold: 0.2
-  bottomSnapThreshold: 0.1
+  bottomSnapThreshold: 0.3
   levelHeight: 41
-  deathZoneOffset: 1
-  platformSnapOffset: 1
+  deathZoneOffset: 1.25
+  platformSnapOffset: 1.5
   camSpeed: 13
   snapToPlatform: 0
   _bottomChecker: {fileID: 0}
@@ -12728,7 +12698,7 @@ RectTransform:
   m_GameObject: {fileID: 1973096548}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: -4.03, z: 90}
-  m_LocalScale: {x: 0.010416667, y: 0.010416667, z: 0.010416667}
+  m_LocalScale: {x: 0.010405297, y: 0.010405297, z: 0.010405297}
   m_Children:
   - {fileID: 445496016}
   - {fileID: 67207055}

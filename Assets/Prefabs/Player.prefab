@@ -277,16 +277,16 @@ MonoBehaviour:
   m_jumpInterval: 0.1
   m_maxFallSpeed: 20
   m_maxGlideSpeed: 3.5
-  m_acceleration: 16
-  m_maxSpeed: 4
+  m_acceleration: 0
+  m_maxSpeed: 6
   m_maxSpeedGliding: 6
-  m_drag: 180
-  m_velocityThreshold: 4
-  m_velocityFlipThreshold: 0.3
-  jumpClip: {fileID: 8300000, guid: 6ece9fd135906474bb99a81e22d3c441, type: 3}
+  m_drag: 400
+  m_velocityThreshold: 0.5
+  m_velocityFlipThreshold: 0.1
+  jumpClip: {fileID: 8300000, guid: 558b86974f9acd143ab37730da0919ab, type: 3}
   winClip: {fileID: 8300000, guid: 677ab81b0d431414396ec0af5d05624f, type: 3}
   loseClip: {fileID: 8300000, guid: 82206e8431d30034995fa057326aba0c, type: 3}
-  boostClip: {fileID: 8300000, guid: 5aeb9dceb7e720b478758be357083321, type: 3}
+  boostClip: {fileID: 8300000, guid: 54cc8222b4aa6c942afc175292ef8520, type: 3}
 --- !u!212 &212195255223162046
 SpriteRenderer:
   m_ObjectHideFlags: 1

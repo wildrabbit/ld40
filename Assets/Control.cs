@@ -5,7 +5,9 @@ using UnityEngine;
 public class Control : MonoBehaviour {
 
 	// Use this for initialization
-	void Start () {
+	void Start ()
+    {
+        Screen.SetResolution(432, 768, false);
         StartCoroutine(ToMain());
 	}
 

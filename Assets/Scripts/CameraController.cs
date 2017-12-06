@@ -60,7 +60,7 @@ public class CameraController : MonoBehaviour
         _platformSnapping = true;
         float speed = camSpeed / 2;
         float time = Mathf.Max(Mathf.Abs(_targetHeight - _cam.transform.position.y) / speed, 0.025f);
-        Debug.Log("Step on platform");
+       
         motion = _cam.transform.DOMoveY(_targetHeight, time).OnComplete(() =>
         {
             if (OnPlatformSnapFinished != null) OnPlatformSnapFinished(GetCameraDeathZone());
