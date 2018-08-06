@@ -56,7 +56,7 @@ public class HUD : MonoBehaviour
         yield return new WaitForSeconds(0.7f);
         _player.gameObject.SetActive(false);
         yield return new WaitForSeconds(0.3f);
-        yield return new WaitUntil(() => Input.anyKeyDown);
+        yield return new WaitUntil(() => _player.GameInput.any);
         _gameFinished.enabled = false;
         yield return FindObjectOfType<BottomCheck>().RestartStuff(!won);        
     }

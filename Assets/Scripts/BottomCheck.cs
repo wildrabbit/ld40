@@ -24,12 +24,20 @@ public class BottomCheck : MonoBehaviour
         _player.PlatformStepped += OnPlatformStepped;
         _player.DepletionFinished += (endType) => RestartStuff();
 
-        _camController.OnPlatformSnapFinished += (newPos) => { if (_collider2D.isTrigger) { transform.position = newPos; } };
+        if (_camController != null)
+        {
+            _camController.OnPlatformSnapFinished += (newPos) => { if (_collider2D.isTrigger) { transform.position = newPos; } };
+        }
         _player.GlideFinished += OnGlideFinished;
         awaitingPlatform = false;
     }
     void OnGlideFinished()
     {
+        // HACK! This is for test scenes. Not the right place! :/
+        if (_camController == null)
+        {
+            _player.EnableMovement(true);
+        }
         awaitingPlatform = true;
     }
 

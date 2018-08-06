@@ -31,6 +31,7 @@ public static class RaycastLayers
 
 public class Player : MonoBehaviour
 {
+    private const string kView = "PlayerAnimView";
     private const float SQRT_2 = 1.41421356237f;
 
     [Header("Energy stuff")]
@@ -104,11 +105,22 @@ public class Player : MonoBehaviour
     public event Action<bool> GameFinished;
 
     SpriteRenderer _rendererRef;
-    SpriteRenderer _glidingRef;
+    
+
+    GameInput _input;
+    public GameInput GameInput
+    {
+        get { return _input; }
+    }
 
     public int Collected
     {
         get; private set;
+    }
+
+    public bool Moving
+    {
+        get { return Mathf.Abs(m_velocity.x) > 0.1f && !_gliding && m_grounded && !_boosting;  }
     }
 
     //------------------------------------
@@ -151,6 +163,13 @@ public class Player : MonoBehaviour
         get { return _gliding; }
     }
 
+    public bool Grounded
+    {
+        get { return m_grounded; }
+    }
+
+    public event Action JumpStart;
+
     private bool _depleting;
     public bool Depleting
     {
@@ -175,16 +194,20 @@ public class Player : MonoBehaviour
     // Use this for initialization
     void Start()
     {
+        _input = new GameInput();
+        _input.Init();
+
         _over = false;
         _levelData = FindObjectOfType<Level>();
-        _rendererRef = transform.Find("View").GetComponent<SpriteRenderer>();
-        _glidingRef = transform.Find("GlidingView").GetComponent<SpriteRenderer>();
+        _rendererRef = transform.Find(kView).GetComponent<SpriteRenderer>();
+        
         _canMove = false;
         _startPos = new Vector2(transform.position.x, transform.position.y);
         _colliderRef = GetComponent<CapsuleCollider2D>();
         _playerBody = GetComponent<Rigidbody2D>();
 
-        _endColliderRef = GameObject.FindGameObjectWithTag("Finish").GetComponent<Collider2D>();
+        GameObject obj = GameObject.FindGameObjectWithTag("Finish");
+        _endColliderRef = obj == null ? null : obj.GetComponent<Collider2D>();
 
         _audio = GetComponent<AudioSource>();
 
@@ -217,8 +240,7 @@ public class Player : MonoBehaviour
 
     void SetGliding(bool value)
     {
-        _gliding = value;
-        _glidingRef.enabled = value;
+        _gliding = value;        
     }
 
     // Update is called once per frame
@@ -231,8 +253,10 @@ public class Player : MonoBehaviour
             UpdateDepleting();
         }
 
+        _input.Update();
+
         m_impulse = Vector2.zero;
-        m_impulse.x = _canMove ? Input.GetAxis("Horizontal") : 0f;
+        m_impulse.x = _canMove ? _input.xAxis : 0f;
 
         m_wasFalling = m_falling;
 
@@ -734,6 +758,10 @@ public class Player : MonoBehaviour
         if (!_depleting)
         {
             BeginDepleting();
+        }
+        if (JumpStart != null)
+        {
+            JumpStart();
         }
     }
 
